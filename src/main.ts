@@ -16,9 +16,6 @@ let mousePos: mousePos = {
   y: 0
 };
 
-let hue: number = 0;
-
-
 
 // main
 
@@ -35,12 +32,20 @@ function initCanvas() {
 
 
 
+
 let particlesArray: Particles[] = [];
 
 // particles creator
-function createParticles() {
-  for (let i = 0; i < 5; i++) {
-    particlesArray.push(new Particles(painter, mousePos.x, mousePos.y, hue));
+function createParticles(isMoving: boolean) {
+  const particlesCount = isMoving ? 3 : 8;
+  for (let i = 0; i < particlesCount; i++) {
+    
+    const currentHue: number = mousePos.x / canvas.width * 360;
+    let currentSat: number = (mousePos.y / canvas.height) * 90;
+
+    if(currentSat < 30) currentSat = 40;
+
+    particlesArray.push(new Particles(painter, mousePos.x, mousePos.y, currentHue + (0.3 * i), currentSat));
   }
 }
 
@@ -60,23 +65,36 @@ function updateParticles() {
 //init web audio
 let musicians: Sound[] = [];
 const musician = new Sound();
+let frequency: number = 65;
+let amp: number = 1;
+
+function calcProps() {
+
+  // frq calculator
+  // frq 996 == B5 to 124 == B2 note: B2 vanda alik agadi vaye B2 note edge ma pardein same for B5
+  frequency = (mousePos.x / canvas.width) * 872;
+  frequency += 104;
+
+  // amp calculator
+  amp = 1 - (mousePos.y / canvas.height);
+}
 
 // sound generator
 function generateSound(): Sound {
-  // start the oscillator with the frequency derived from the x-touch coordinate
-  const frequency = mousePos.x + 65;
   let musician: Sound = new Sound();
   musicians.push(musician);
+  
+  calcProps();
   musician.start(frequency);
+  musician.gainNode.gain.value = amp;
 
   return musician;
 }
 
 function updateSound(musician: Sound) {
-  // frq 1975 == B6 to 65 == C2
-
-  // frq calculator
-  const frequency = mousePos.x + 65;
+  
+  calcProps();
+  musician.gainNode.gain.value = amp;
 
   musician.frq = frequency;
   musician.update();
@@ -95,6 +113,8 @@ if (canvas != null) {
 
   canvas.addEventListener("mousedown", function (e) {
     mousePos.x = e.x;
+    mousePos.y = e.y;
+    createParticles(false);
     const musician = generateSound();
     isTouch = true;
 
@@ -116,7 +136,7 @@ if (canvas != null) {
       if (isTouch) {
         mousePos.x = e.x;
         mousePos.y = e.y;
-        createParticles();
+        createParticles(true);
         updateSound(musician);
   
       }
@@ -126,28 +146,35 @@ if (canvas != null) {
 
 
   // touch start
-  canvas.addEventListener("touchstart", function (e) {
-    console.log(e.targetTouches);
-    generateSound();
+  // canvas.addEventListener("touchstart", function (e) {
+  //   console.log(e.targetTouches);
+  //   const musician = generateSound();
     
-    // mila: yo baaki xa
-    canvas.addEventListener("touchend", function () {
-    });
+  //   canvas.addEventListener("touchend", function () {
+  //     musician.gainNode.gain.linearRampToValueAtTime(0.01, musician.audioCtx.currentTime + 2);
+  //     setTimeout(function(){
+  //       musician.stop(0);
+  //       const musicanIdx: number = musicians.indexOf(musician);
+  //       if (musicanIdx > -1){
+  //         musicians.splice(musicanIdx, 1);
+  //       }
+  //     }, 2000);
+  //   });
   
-    // update if the touch moves while it is down
-    canvas.addEventListener("touchmove", function (e) {
-      e.preventDefault();
-      // for all touch points get the position of touch
+  //   // update if the touch moves while it is down
+  //   canvas.addEventListener("touchmove", function (e) {
+  //     e.preventDefault();
+  //     // for all touch points get the position of touch
   
-      for (let i = 0; i < e.changedTouches.length; i++) {
-        mousePos.x = e.changedTouches[i].clientX;
-        mousePos.y = e.changedTouches[i].clientY;
-        createParticles();
-      }
+  //     for (let i = 0; i < e.changedTouches.length; i++) {
+  //       mousePos.x = e.changedTouches[i].clientX;
+  //       mousePos.y = e.changedTouches[i].clientY;
+  //       createParticles();
+  //     }
   
   
-    });
-  });
+  //   });
+  // });
 
   // animation loop
   function animater() {
@@ -155,7 +182,6 @@ if (canvas != null) {
       painter.clearRect(0, 0, canvas.width, canvas.height);
     }
 
-    hue++;
     updateParticles();
     requestAnimationFrame(animater);
   }

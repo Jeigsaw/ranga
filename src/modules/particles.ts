@@ -7,14 +7,14 @@ export default class Particles {
     speedY: number;
     color: string;
 
-    constructor(ctx: CanvasRenderingContext2D, x: number, y: number, color: number){
+    constructor(ctx: CanvasRenderingContext2D, x: number, y: number, hue: number, sat: number = 70){
         this.x = x;
         this.y = y;
         this.ctx = ctx;
-        this.size = Math.random()*10 + 1;
+        this.size = Math.random()*6 + 1;
         this.speedX = Math.random()*2 - 1;
         this.speedY = Math.random()*2 -1;
-        this.color = 'hsl('+ color +',65%, 70%)';
+        this.color = 'hsl('+ hue +',65%,'+ sat +'%)';
     }
 
     update(){
